@@ -1,130 +1,606 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alarm History</title>
+    <title>Tag Monitor - Professional Dashboard</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --primary: #0f172a;
+            --primary-hover: #1e293b;
+            --secondary: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        * {
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            box-sizing: border-box;
         }
-        h1 {
-            color: #333;
-            text-align: center;
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            line-height: 1.5;
+            min-height: 100vh;
         }
-        .container {
+
+        .layout-container {
             max-width: 1200px;
             margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 2rem;
         }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border-color: var(--border);
+            color: var(--text-main);
+        }
+
+        .btn-outline:hover {
+            background-color: #f1f5f9;
+            border-color: var(--secondary);
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
             text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
         }
+
         th {
-            background-color: #007bff;
-            color: white;
-            position: sticky;
-            top: 0;
+            background-color: #f1f5f9;
+            padding: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--secondary);
+            border-bottom: 1px solid var(--border);
         }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.875rem;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
         tr:hover {
-            background-color: #f5f5f5;
+            background-color: #f8fafc;
         }
-        .loading {
-            text-align: center;
-            padding: 20px;
-            font-style: italic;
-            color: #666;
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
         }
-        .error {
-            color: red;
+
+        .status-active {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .status-inactive {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            padding: 0.4rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            border-color: var(--secondary);
+            color: var(--primary);
+            background: #f1f5f9;
+        }
+
+        .icon-btn.delete:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+            background: #fef2f2;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .pagination-info {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        select {
+            padding: 0.4rem 2rem 0.4rem 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid var(--border);
+            font-size: 0.875rem;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+        }
+
+        .modal-header {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.625rem;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--secondary);
+            ring: 2px solid #e2e8f0;
+        }
+
+        .loading-state {
             text-align: center;
-            padding: 20px;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .error-message {
+            background: #fef2f2;
+            border: 1px solid #fee2e2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            margin: 1rem 0;
         }
     </style>
 </head>
+
 <body>
-    <div class="container">
-        <h1>Alarm History</h1>
-        <div id="status" class="loading">Loading data...</div>
-        <table id="alarmTable" style="display: none;">
-            <thead>
-                <tr>
-                    <th>Event Time</th>
-                    <th>Message</th>
-                    <th>Severity</th>
-                    <th>Source Name</th>
-                    <th>Event Category</th>
-                    <th>State</th>
-                </tr>
-            </thead>
-            <tbody id="alarmBody">
-            </tbody>
-        </table>
+    <div class="layout-container">
+        <header class="header">
+            <h1><i data-lucide="activity"></i> Tag Monitor Dashboard</h1>
+            <div class="nav-actions">
+                <a href="alarms.html" class="btn btn-outline" style="color: var(--danger); border-color: #fee2e2;">
+                    <i data-lucide="bell"></i> View Alarms
+                </a>
+            </div>
+        </header>
+
+        <main class="card">
+            <div class="controls">
+                <button class="btn btn-primary" onclick="showAddTagModal()">
+                    <i data-lucide="plus"></i> Add New Tag
+                </button>
+                <button class="btn btn-outline" onclick="refreshTags()">
+                    <i data-lucide="refresh-cw"></i> Refresh
+                </button>
+            </div>
+
+            <div id="status" class="loading-state">
+                <i data-lucide="loader-2" class="animate-spin"></i> Loading system tags...
+            </div>
+
+            <div class="table-container">
+                <table id="tagTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Tag Detail</th>
+                            <th>Description</th>
+                            <th>High</th>
+                            <th>Low</th>
+                            <th>Status</th>
+                            <th>Last Updated</th>
+                            <th style="text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tagBody"></tbody>
+                </table>
+            </div>
+
+            <div class="pagination" id="pagination" style="display: none;">
+                <div class="pagination-info" id="paginationInfo">Showing 0 - 0 of 0</div>
+                <div class="pagination-controls">
+                    <span style="font-size: 0.875rem; color: var(--text-muted);">Rows per page</span>
+                    <select id="pageSize" onchange="changePageSize(this.value)">
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                    </select>
+                    <button class="btn btn-outline" onclick="previousPage()" id="prevBtn" disabled>
+                        <i data-lucide="chevron-left"></i>
+                    </button>
+                    <button class="btn btn-outline" onclick="nextPage()" id="nextBtn">
+                        <i data-lucide="chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal -->
+    <div id="tagModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Add New Tag</div>
+            <form id="tagForm">
+                <div class="form-group">
+                    <label>Tag Name</label>
+                    <input type="text" id="tagName" placeholder="e.g. Tank_Pressure_01" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="description" rows="3" placeholder="Describe the tag purpose..."></textarea>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>High Limit</label>
+                        <input type="number" id="highLimit" step="0.01" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Low Limit</label>
+                        <input type="number" id="lowLimit" step="0.01" value="0">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.75rem; margin-top: 2rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Save Configuration</button>
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const apiBase = window.location.origin; // Dynamically get origin
-            // Or explicitly: const apiBase = 'https://localhost:7198'; if running separately
-            const apiUrl = `${apiBase}/api/alarms`;
-            
+        const apiBase = window.location.origin;
+        const tagsApiUrl = `${apiBase}/api/tags`;
+
+        let currentEditId = null;
+        let currentPage = 1;
+        let currentPageSize = 10;
+        let totalPages = 1;
+
+        async function fetchTags() {
             const statusDiv = document.getElementById('status');
-            const table = document.getElementById('alarmTable');
-            const tbody = document.getElementById('alarmBody');
+            const table = document.getElementById('tagTable');
+            const tbody = document.getElementById('tagBody');
+            const pagination = document.getElementById('pagination');
 
             try {
-                const response = await fetch(apiUrl);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                
-                if (data.length === 0) {
-                    statusDiv.textContent = 'No alarm events found.';
+                const response = await fetch(`${tagsApiUrl}?pageNumber=${currentPage}&pageSize=${currentPageSize}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const result = await response.json();
+
+                if (result.totalCount === 0) {
+                    statusDiv.innerHTML = `
+                        <div class="loading-state">
+                            <p>No system tags found.</p>
+                            <button class="btn btn-outline" style="margin-top: 1rem" onclick="showAddTagModal()">Create First Tag</button>
+                        </div>`;
+                    table.style.display = 'none';
+                    pagination.style.display = 'none';
                     return;
                 }
 
                 statusDiv.style.display = 'none';
                 table.style.display = 'table';
+                pagination.style.display = 'flex';
+                tbody.innerHTML = '';
 
-                data.forEach(alarm => {
+                totalPages = result.totalPages;
+                updatePaginationInfo(result);
+
+                result.data.forEach(tag => {
                     const tr = document.createElement('tr');
-                    
-                    // Format Date
-                    const date = alarm.eventTimeStamp ? new Date(alarm.eventTimeStamp).toLocaleString() : 'N/A';
-                    
+                    const updatedDate = tag.updatedAt ? new Date(tag.updatedAt).toLocaleDateString() + ' ' + new Date(tag.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+                    const statusBadge = tag.isActive
+                        ? '<span class="status-badge status-active">Active</span>'
+                        : '<span class="status-badge status-inactive">Inactive</span>';
+
                     tr.innerHTML = `
-                        <td>${date}</td>
-                        <td>${alarm.message || ''}</td>
-                        <td>${alarm.severity || ''}</td>
-                        <td>${alarm.sourceName || ''}</td>
-                        <td>${alarm.eventCategory || ''}</td>
-                        <td>${alarm.active ? 'Active' : 'Inactive'}</td>
+                        <td>
+                            <div style="font-weight: 600; color: var(--primary)">${tag.tagName || ''}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted)">ID: #${tag.id}</div>
+                        </td>
+                        <td><span style="color: var(--text-muted)">${tag.description || '—'}</span></td>
+                        <td><code>${tag.highLimit}</code></td>
+                        <td><code>${tag.lowLimit}</code></td>
+                        <td>${statusBadge}</td>
+                        <td style="color: var(--text-muted); font-size: 0.75rem">${updatedDate}</td>
+                        <td style="text-align: right">
+                            <div class="action-btns" style="justify-content: flex-end">
+                                <button class="icon-btn" title="Edit Tag" onclick="editTag(${tag.id})">
+                                    <i data-lucide="edit-3" style="width: 16px; height: 16px;"></i>
+                                </button>
+                                <button class="icon-btn delete" title="Delete Tag" onclick="deleteTag(${tag.id})">
+                                    <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                                </button>
+                            </div>
+                        </td>
                     `;
                     tbody.appendChild(tr);
                 });
+                lucide.createIcons();
             } catch (error) {
-                console.error('Error fetching data:', error);
-                statusDiv.textContent = 'Error loading data. See console for details.';
-                statusDiv.className = 'error';
-                
-                // Fallback message for user
-                statusDiv.innerHTML += '<br>Make sure the API is running and configured correctly.';
+                console.error('Error fetching tags:', error);
+                statusDiv.innerHTML = '<div class="error-message">Unable to connect to the monitoring service. Please ensure the API is active.</div>';
+                table.style.display = 'none';
+                pagination.style.display = 'none';
+            }
+        }
+
+        function updatePaginationInfo(result) {
+            const start = (result.pageNumber - 1) * result.pageSize + 1;
+            const end = Math.min(result.pageNumber * result.pageSize, result.totalCount);
+            document.getElementById('paginationInfo').textContent = `Showing ${start} to ${end} of ${result.totalCount}`;
+
+            document.getElementById('prevBtn').disabled = !result.hasPreviousPage;
+            document.getElementById('nextBtn').disabled = !result.hasNextPage;
+        }
+
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                fetchTags();
+            }
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                fetchTags();
+            }
+        }
+
+        function changePageSize(size) {
+            currentPageSize = parseInt(size);
+            currentPage = 1;
+            fetchTags();
+        }
+
+        function showAddTagModal() {
+            currentEditId = null;
+            document.getElementById('tagForm').reset();
+            document.querySelector('.modal-header').textContent = 'Create New System Tag';
+            document.getElementById('tagModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('tagModal').style.display = 'none';
+        }
+
+        async function editTag(id) {
+            try {
+                const response = await fetch(`${tagsApiUrl}/${id}`);
+                const tag = await response.json();
+
+                currentEditId = id;
+                document.getElementById('tagName').value = tag.tagName;
+                document.getElementById('description').value = tag.description || '';
+                document.getElementById('highLimit').value = tag.highLimit;
+                document.getElementById('lowLimit').value = tag.lowLimit;
+
+                document.querySelector('.modal-header').textContent = 'Update Tag Configuration';
+                document.getElementById('tagModal').style.display = 'flex';
+            } catch (error) {
+                alert('Error loading tag details');
+            }
+        }
+
+        async function deleteTag(id) {
+            if (!confirm('Are you certain you want to remove this tag from the system?')) return;
+
+            try {
+                const response = await fetch(`${tagsApiUrl}/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    fetchTags();
+                } else {
+                    alert('Request failed');
+                }
+            } catch (error) {
+                alert('Network error during deletion');
+            }
+        }
+
+        document.getElementById('tagForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const tagData = {
+                tagName: document.getElementById('tagName').value,
+                description: document.getElementById('description').value,
+                highLimit: parseFloat(document.getElementById('highLimit').value),
+                lowLimit: parseFloat(document.getElementById('lowLimit').value),
+                isActive: true
+            };
+
+            try {
+                let response;
+                if (currentEditId) {
+                    tagData.id = currentEditId;
+                    response = await fetch(`${tagsApiUrl}/${currentEditId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(tagData)
+                    });
+                } else {
+                    response = await fetch(tagsApiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(tagData)
+                    });
+                }
+
+                if (response.ok) {
+                    closeModal();
+                    fetchTags();
+                } else {
+                    alert('Error saving configuration');
+                }
+            } catch (error) {
+                alert('Connection failure');
             }
         });
+
+        function refreshTags() {
+            fetchTags();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchTags();
+            lucide.createIcons();
+        });
+
+        window.onclick = function (event) {
+            const modal = document.getElementById('tagModal');
+            if (event.target == modal) closeModal();
+        }
     </script>
 </body>
+
 </html>

@@ -10,5 +10,6 @@ namespace AlarmMonitor.Data
         }
 
         public DbSet<AlarmEvent> AlarmEvents { get; set; }
+        public DbSet<TagMaster> TagMasters { get; set; }
     }
 }
