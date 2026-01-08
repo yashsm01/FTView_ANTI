@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alarm History</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #666;
+        }
+        .error {
+            color: red;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Alarm History</h1>
+        <div id="status" class="loading">Loading data...</div>
+        <table id="alarmTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Event Time</th>
+                    <th>Message</th>
+                    <th>Severity</th>
+                    <th>Source Name</th>
+                    <th>Event Category</th>
+                    <th>State</th>
+                </tr>
+            </thead>
+            <tbody id="alarmBody">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const apiBase = window.location.origin; // Dynamically get origin
+            // Or explicitly: const apiBase = 'https://localhost:7198'; if running separately
+            const apiUrl = `${apiBase}/api/alarms`;
+            
+            const statusDiv = document.getElementById('status');
+            const table = document.getElementById('alarmTable');
+            const tbody = document.getElementById('alarmBody');
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                if (data.length === 0) {
+                    statusDiv.textContent = 'No alarm events found.';
+                    return;
+                }
+
+                statusDiv.style.display = 'none';
+                table.style.display = 'table';
+
+                data.forEach(alarm => {
+                    const tr = document.createElement('tr');
+                    
+                    // Format Date
+                    const date = alarm.eventTimeStamp ? new Date(alarm.eventTimeStamp).toLocaleString() : 'N/A';
+                    
+                    tr.innerHTML = `
+                        <td>${date}</td>
+                        <td>${alarm.message || ''}</td>
+                        <td>${alarm.severity || ''}</td>
+                        <td>${alarm.sourceName || ''}</td>
+                        <td>${alarm.eventCategory || ''}</td>
+                        <td>${alarm.active ? 'Active' : 'Inactive'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                statusDiv.textContent = 'Error loading data. See console for details.';
+                statusDiv.className = 'error';
+                
+                // Fallback message for user
+                statusDiv.innerHTML += '<br>Make sure the API is running and configured correctly.';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+@AlarmMonitor_HostAddress = http://localhost:5258
+
+GET {{AlarmMonitor_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
