@@ -143,6 +143,18 @@
     font-size: 0.875rem;
 }
 
+.filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+    grid-column: 1 / -1;
+    /* Span across all grid columns for better space management */
+    margin-top: 0.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
 .severity-tag {
     padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;

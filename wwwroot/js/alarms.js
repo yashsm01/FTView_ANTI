@@ -108,35 +108,71 @@ async function syncTagFromAlarm(sourceName) {
 }
 
 async function fetchAlarms(apiUrl, since = null, page = 1, size = 10) {
-    let url = apiUrl;
-    if (since) url += `?since=${since.toISOString()}`;
-    else url += `?pageNumber=${page}&pageSize=${size}`;
+    let url = new URL(apiUrl);
+    if (since) {
+        url.searchParams.append('since', since.toISOString());
+    } else {
+        url.searchParams.append('pageNumber', page);
+        url.searchParams.append('pageSize', size);
 
-    const response = await fetch(url);
+        const sName = document.getElementById('filterSourceName').value;
+        const sev = document.getElementById('filterSeverity').value;
+        const from = document.getElementById('filterFromDate').value;
+        const to = document.getElementById('filterToDate').value;
+
+        if (sName) url.searchParams.append('sourceName', sName);
+        if (sev) url.searchParams.append('severity', sev);
+        if (from) url.searchParams.append('fromDate', from);
+        if (to) url.searchParams.append('toDate', to);
+    }
+
+    const response = await fetch(url.toString());
     if (!response.ok) throw new Error(`Status: ${response.status}`);
     return await response.json();
 }
 
 function applyFilters() {
-    const sName = document.getElementById('filterSourceName').value.toLowerCase();
-    const sev = document.getElementById('filterSeverity').value;
-    const from = document.getElementById('filterFromDate').value;
-    const to = document.getElementById('filterToDate').value;
-
-    filteredAlarms = allAlarms.filter(a => {
-        if (sName && !(a.sourceName || '').toLowerCase().includes(sName)) return false;
-        if (sev && a.severity != sev) return false;
-        if (from && new Date(a.eventTimeStamp) < new Date(from)) return false;
-        if (to && new Date(a.eventTimeStamp) > new Date(to)) return false;
-        return true;
-    });
-    updateTable(filteredAlarms);
+    currentPage = 1;
+    initialFetchAlarms();
 }
 
 function clearFilters() {
     document.querySelectorAll('.filters-card input, .filters-card select').forEach(el => el.value = '');
-    filteredAlarms = allAlarms;
-    updateTable(filteredAlarms);
+    applyFilters();
+}
+
+function exportToExcel() {
+    const apiBase = window.location.origin;
+    let url = new URL(`${apiBase}/api/alarms/export/excel`);
+
+    const sName = document.getElementById('filterSourceName').value;
+    const sev = document.getElementById('filterSeverity').value;
+    const from = document.getElementById('filterFromDate').value;
+    const to = document.getElementById('filterToDate').value;
+
+    if (sName) url.searchParams.append('sourceName', sName);
+    if (sev) url.searchParams.append('severity', sev);
+    if (from) url.searchParams.append('fromDate', from);
+    if (to) url.searchParams.append('toDate', to);
+
+    window.location.href = url.toString();
+}
+
+function exportToPdf() {
+    const apiBase = window.location.origin;
+    let url = new URL(`${apiBase}/api/alarms/export/pdf`);
+
+    const sName = document.getElementById('filterSourceName').value;
+    const sev = document.getElementById('filterSeverity').value;
+    const from = document.getElementById('filterFromDate').value;
+    const to = document.getElementById('filterToDate').value;
+
+    if (sName) url.searchParams.append('sourceName', sName);
+    if (sev) url.searchParams.append('severity', sev);
+    if (from) url.searchParams.append('fromDate', from);
+    if (to) url.searchParams.append('toDate', to);
+
+    window.location.href = url.toString();
 }
 
 function updateTable(alarms) {

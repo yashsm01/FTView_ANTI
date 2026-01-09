@@ -179,7 +179,7 @@ namespace AlarmMonitor.Controllers
                     {
                         row.RelativeItem().Column(col =>
                         {
-                            col.Item().Text("ALARM HISTORY REPORT").FontSize(20).SemiBold().FontColor(Colors.Slate.Darken3);
+                            col.Item().Text("ALARM HISTORY REPORT").FontSize(20).SemiBold().FontColor(Colors.Blue.Darken3);
                             col.Item().Text($"Generated on: {DateTime.Now:yyyy-MM-dd HH:mm:ss}").FontSize(9).FontColor(Colors.Grey.Medium);
                         });
                     });
