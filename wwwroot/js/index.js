@@ -39,6 +39,7 @@ async function fetchTags() {
 
         result.data.forEach(tag => {
             const tr = document.createElement('tr');
+            tr.setAttribute('data-tag-name', tag.tagName);
             const updatedDate = tag.updatedAt ? new Date(tag.updatedAt).toLocaleDateString() + ' ' + new Date(tag.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
             const statusBadge = tag.isActive
                 ? '<span class="status-badge status-active">Active</span>'
@@ -50,6 +51,7 @@ async function fetchTags() {
                     <div style="font-size: 0.75rem; color: var(--text-muted)">ID: #${tag.id}</div>
                 </td>
                 <td><span style="color: var(--text-muted)">${tag.description || '—'}</span></td>
+                <td><code class="live-value" id="val-${tag.tagName}">...</code></td>
                 <td><code>${tag.highLimit}</code></td>
                 <td><code>${tag.lowLimit}</code></td>
                 <td>${statusBadge}</td>
@@ -68,6 +70,7 @@ async function fetchTags() {
             tbody.appendChild(tr);
         });
         lucide.createIcons();
+        pollLiveValues(); // Initial poll after table loads
     } catch (error) {
         console.error('Error fetching tags:', error);
         statusDiv.innerHTML = '<div class="error-message">Unable to connect to the monitoring service. Please ensure the API is active.</div>';
@@ -188,12 +191,33 @@ document.getElementById('tagForm').addEventListener('submit', async (e) => {
     }
 });
 
+async function pollLiveValues() {
+    const liveCells = document.querySelectorAll('.live-value');
+    liveCells.forEach(async (cell) => {
+        const tagName = cell.id.replace('val-', '');
+        try {
+            const response = await fetch(`${apiBase}/api/livetags/${tagName}`);
+            if (response.ok) {
+                const result = await response.json();
+                cell.textContent = result.value;
+
+                // Add a small highlight effect on change
+                cell.style.color = '#3b82f6';
+                setTimeout(() => cell.style.color = '', 500);
+            }
+        } catch (e) {
+            cell.textContent = 'Err';
+        }
+    });
+}
+
 function refreshTags() {
     fetchTags();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchTags();
+    setInterval(pollLiveValues, 5000); // Poll live values every 5 seconds
     lucide.createIcons();
 });
 

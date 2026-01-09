@@ -12,6 +12,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AlarmContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("AlarmDatabase")));
 
+builder.Services.AddSingleton<AlarmMonitor.Services.IOpcService, AlarmMonitor.Services.OpcService>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
