@@ -32,6 +32,16 @@ function updateAlertPanel() {
     const count = unclearedAlarms.size;
 
     badge.textContent = count;
+
+    // Toggle whole-page blink and audio if alerts exist
+    if (count > 0) {
+        document.body.classList.add('alert-active-blink');
+        if (window.alarmSound) window.alarmSound.start();
+    } else {
+        document.body.classList.remove('alert-active-blink');
+        if (window.alarmSound) window.alarmSound.stop();
+    }
+
     if (count === 0) {
         panelContent.innerHTML = '<div style="text-align: center; color: var(--secondary); padding: 2rem;">No active alerts trace.</div>';
         return;
@@ -59,7 +69,9 @@ function updateAlertPanel() {
         `;
         panelContent.appendChild(alertDiv);
     });
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 function addNewAlert(alarm) {
@@ -225,7 +237,9 @@ async function initialFetchAlarms() {
         updateTable(filteredAlarms);
         updatePaginationInfo(result);
         lastCheckTime = new Date();
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     } catch (e) {
         statusDiv.innerHTML = `<div class="btn-danger" style="padding: 1rem; border-radius: 0.5rem">Error connecting to historian vault.</div>`;
     }
@@ -264,5 +278,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadUnclearedAlarms();
     await initialFetchAlarms();
     setInterval(() => pollForNewAlarms(`${window.location.origin}/api/alarms`), POLL_INTERVAL);
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 });

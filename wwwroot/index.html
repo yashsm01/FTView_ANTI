@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tag Monitor - Professional Dashboard</title>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="js/lucide.min.js"></script>
     <link rel="stylesheet" href="css/common.css">
     <link rel="stylesheet" href="css/index.css">
 </head>
@@ -13,8 +13,16 @@
 <body>
     <div class="layout-container">
         <header class="header">
-            <h1><i data-lucide="activity"></i> Tag Monitor Dashboard</h1>
-            <div class="nav-actions">
+            <div class="header-branding">
+                <div class="header-logos">
+                    <video class="client-logo" autoplay loop muted playsinline>
+                        <source src="assets/client-logo.mp4" type="video/mp4">
+                    </video>
+                </div>
+                <h1><i data-lucide="activity"></i> Tag Monitor Dashboard</h1>
+            </div>
+            <div class="nav-actions" style="display: flex; align-items: center; gap: 1.5rem;">
+                <img src="assets/company-logo.png" alt="Company Logo" class="company-logo">
                 <a href="alarms.html" class="btn btn-outline" style="color: var(--danger); border-color: #fee2e2;">
                     <i data-lucide="bell"></i> View Alarms
                 </a>
@@ -103,6 +111,7 @@
         </div>
     </div>
 
+    <script src="js/alarm-sound.js"></script>
     <script src="js/index.js"></script>
 </body>
 

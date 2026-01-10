@@ -69,7 +69,9 @@ async function fetchTags() {
             `;
             tbody.appendChild(tr);
         });
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
         pollLiveValues(); // Initial poll after table loads
     } catch (error) {
         console.error('Error fetching tags:', error);
@@ -211,6 +213,27 @@ async function pollLiveValues() {
     });
 }
 
+function checkGlobalAlerts() {
+    const STORAGE_KEY = 'unclearedAlarms';
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+        try {
+            const alarms = JSON.parse(stored);
+            if (alarms.length > 0) {
+                document.body.classList.add('alert-active-blink');
+                if (window.alarmSound) window.alarmSound.start();
+            } else {
+                document.body.classList.remove('alert-active-blink');
+                if (window.alarmSound) window.alarmSound.stop();
+            }
+        } catch (e) {
+            document.body.classList.remove('alert-active-blink');
+        }
+    } else {
+        document.body.classList.remove('alert-active-blink');
+    }
+}
+
 function refreshTags() {
     fetchTags();
 }
@@ -218,7 +241,11 @@ function refreshTags() {
 document.addEventListener('DOMContentLoaded', () => {
     fetchTags();
     setInterval(pollLiveValues, 5000); // Poll live values every 5 seconds
-    lucide.createIcons();
+    setInterval(checkGlobalAlerts, 2000); // Check for global alerts every 2 seconds
+    checkGlobalAlerts(); // Initial check
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 });
 
 window.onclick = function (event) {

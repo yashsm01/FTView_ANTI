@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Using system font stack for offline support */
 
 :root {
     --primary: #0f172a;
@@ -40,17 +40,59 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.25rem;
+    border-bottom: 2px solid var(--border);
+    min-height: 90px;
+    /* Balanced height for better adaptation */
+}
+
+.header-branding {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: nowrap;
+}
+
+.header-logos {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-right: 1.5rem;
+    border-right: 2px solid var(--border);
+    flex-shrink: 0;
+}
+
+/* Remove border if it's the only logo in branding */
+.header-logos:has(.client-logo:only-child) {
+    border-right: 2px solid var(--border);
+}
+
+.client-logo {
+    height: 56px !important;
+    /* Reduced for better fit */
+    width: auto !important;
+    display: block !important;
+    border-radius: 8px;
+}
+
+.company-logo {
+    height: 48px !important;
+    /* Balanced secondary branding */
+    width: auto !important;
+    display: block !important;
+    margin-right: 1rem;
 }
 
 h1 {
-    font-size: 1.875rem;
+    font-size: 2rem !important;
+    /* Professional scale that fits better */
     font-weight: 700;
     color: var(--primary);
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
+    margin: 0 !important;
+    white-space: nowrap;
 }
 
 .btn {
@@ -253,4 +295,22 @@ select {
 
 .animate-spin {
     animation: spin 1s linear infinite;
+}
+
+@keyframes alertBlink {
+    0% {
+        background-color: var(--background);
+    }
+
+    50% {
+        background-color: rgba(239, 68, 68, 0.15);
+    }
+
+    100% {
+        background-color: var(--background);
+    }
+}
+
+body.alert-active-blink {
+    animation: alertBlink 1.5s ease-in-out infinite !important;
 }
