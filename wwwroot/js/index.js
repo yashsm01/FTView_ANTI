@@ -213,24 +213,21 @@ async function pollLiveValues() {
     });
 }
 
-function checkGlobalAlerts() {
-    const STORAGE_KEY = 'unclearedAlarms';
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-        try {
-            const alarms = JSON.parse(stored);
-            if (alarms.length > 0) {
+async function checkGlobalAlerts() {
+    try {
+        const response = await fetch(`${apiBase}/api/alarms/unacknowledged/count`);
+        if (response.ok) {
+            const count = await response.json();
+            if (count > 0) {
                 document.body.classList.add('alert-active-blink');
                 if (window.alarmSound) window.alarmSound.start();
             } else {
                 document.body.classList.remove('alert-active-blink');
                 if (window.alarmSound) window.alarmSound.stop();
             }
-        } catch (e) {
-            document.body.classList.remove('alert-active-blink');
         }
-    } else {
-        document.body.classList.remove('alert-active-blink');
+    } catch (e) {
+        console.error('Failed to check global alerts:', e);
     }
 }
 

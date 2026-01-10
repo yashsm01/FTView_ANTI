@@ -59,6 +59,7 @@ namespace AlarmMonitor.Controllers
         [HttpGet]
         public async Task<ActionResult<object>> GetAlarmEvents(
             [FromQuery] DateTime? since = null,
+            [FromQuery] bool? onlyUnacknowledged = null,
             [FromQuery] string? sourceName = null,
             [FromQuery] int? severity = null,
             [FromQuery] DateTime? fromDate = null,
@@ -66,10 +67,17 @@ namespace AlarmMonitor.Controllers
             [FromQuery] int? pageNumber = null,
             [FromQuery] int? pageSize = null)
         {
-            // If 'since' is provided, return unpaginated results for real-time polling
+            // If 'since' is provided, return results for real-time polling
             if (since.HasValue)
             {
-                var newAlarms = await _context.AlarmEvents
+                var newAlarmsQuery = _context.AlarmEvents.AsQueryable();
+                
+                if (onlyUnacknowledged == true)
+                {
+                    newAlarmsQuery = newAlarmsQuery.Where(a => a.Acked != true);
+                }
+
+                var newAlarms = await newAlarmsQuery
                     .Where(a => a.EventTimeStamp.HasValue && a.EventTimeStamp.Value > since.Value)
                     .OrderBy(a => a.EventTimeStamp)
                     .ToListAsync();
@@ -78,13 +86,17 @@ namespace AlarmMonitor.Controllers
 
             var query = ApplyFilters(sourceName, severity, fromDate, toDate);
 
+            if (onlyUnacknowledged == true)
+            {
+                query = query.Where(a => a.Acked != true);
+            }
+
             // Pagination logic
             var page = pageNumber ?? 1;
             var size = pageSize ?? 10;
 
             if (page < 1) page = 1;
             if (size < 1) size = 10;
-            if (size > 10) size = 10;
 
             var totalCount = await query.CountAsync();
             var alarms = await query
@@ -100,6 +112,39 @@ namespace AlarmMonitor.Controllers
                 PageNumber = page,
                 PageSize = size
             });
+        }
+
+        // GET: api/Alarms/unacknowledged/count
+        [HttpGet("unacknowledged/count")]
+        public async Task<ActionResult<int>> GetUnacknowledgedCount()
+        {
+            var count = await _context.AlarmEvents.CountAsync(a => a.Acked != true);
+            return Ok(count);
+        }
+
+        // POST: api/Alarms/{id}/acknowledge
+        [HttpPost("{id}/acknowledge")]
+        public async Task<IActionResult> Acknowledge(Guid id)
+        {
+            var alarm = await _context.AlarmEvents.FindAsync(id);
+            if (alarm == null) return NotFound();
+
+            // alarm.Acked = true;
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        // POST: api/Alarms/acknowledge-all
+        [HttpPost("acknowledge-all")]
+        public async Task<IActionResult> AcknowledgeAll()
+        {
+            var unacknowledged = await _context.AlarmEvents.Where(a => a.Acked != true).ToListAsync();
+            foreach (var alarm in unacknowledged)
+            {
+                // alarm.Acked = true;
+            }
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
 
         // GET: api/Alarms/export/excel

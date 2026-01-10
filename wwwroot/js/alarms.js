@@ -11,18 +11,23 @@ let currentPage = 1;
 let currentPageSize = 10;
 let totalPages = 1;
 
-function loadUnclearedAlarms() {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-        try {
-            const alarms = JSON.parse(stored);
-            alarms.forEach(alarm => unclearedAlarms.set(alarm.eventID, alarm));
+async function loadUnclearedAlarms() {
+    try {
+        const apiBase = window.location.origin;
+        const response = await fetch(`${apiBase}/api/alarms?onlyUnacknowledged=true&pageSize=50`);
+        if (response.ok) {
+            const result = await response.json();
+            unclearedAlarms = new Map();
+            result.data.forEach(alarm => unclearedAlarms.set(alarm.eventID, alarm));
             updateAlertPanel();
-        } catch (e) { console.error('Storage error:', e); }
+        }
+    } catch (e) {
+        console.error('Failed to sync unacknowledged alarms:', e);
     }
 }
 
 function saveUnclearedAlarms() {
+    // No longer needed as we persist to DB, but keeping for backward compat if any
     localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(unclearedAlarms.values())));
 }
 
@@ -78,23 +83,40 @@ function addNewAlert(alarm) {
     if (!unclearedAlarms.has(alarm.eventID)) {
         unclearedAlarms.set(alarm.eventID, alarm);
         updateAlertPanel();
-        saveUnclearedAlarms();
         if (alarm.sourceName) syncTagFromAlarm(alarm.sourceName);
     }
 }
 
-function clearAlert(eventID) {
-    unclearedAlarms.delete(eventID);
-    updateAlertPanel();
-    saveUnclearedAlarms();
+async function clearAlert(eventID) {
+    try {
+        const apiBase = window.location.origin;
+        const response = await fetch(`${apiBase}/api/alarms/${eventID}/acknowledge`, { method: 'POST' });
+        if (response.ok) {
+            unclearedAlarms.delete(eventID);
+            updateAlertPanel();
+            saveUnclearedAlarms();
+            initialFetchAlarms(); // Refresh history table
+        }
+    } catch (e) {
+        console.error('Failed to acknowledge alarm:', e);
+    }
 }
 
-function clearAllAlerts() {
+async function clearAllAlerts() {
     if (unclearedAlarms.size === 0) return;
     if (confirm('Acknowledge and clear all active alerts?')) {
-        unclearedAlarms.clear();
-        updateAlertPanel();
-        saveUnclearedAlarms();
+        try {
+            const apiBase = window.location.origin;
+            const response = await fetch(`${apiBase}/api/alarms/acknowledge-all`, { method: 'POST' });
+            if (response.ok) {
+                unclearedAlarms.clear();
+                updateAlertPanel();
+                saveUnclearedAlarms();
+                initialFetchAlarms(); // Refresh history table
+            }
+        } catch (e) {
+            console.error('Failed to acknowledge all alarms:', e);
+        }
     }
 }
 
@@ -121,6 +143,13 @@ async function syncTagFromAlarm(sourceName) {
 
 async function fetchAlarms(apiUrl, since = null, page = 1, size = 10) {
     let url = new URL(apiUrl);
+
+    // Check if we should filter out acknowledged alarms
+    const hideAcked = document.getElementById('filterHideAcked')?.checked;
+    if (hideAcked) {
+        url.searchParams.append('onlyUnacknowledged', 'true');
+    }
+
     if (since) {
         url.searchParams.append('since', since.toISOString());
     } else {
@@ -149,7 +178,9 @@ function applyFilters() {
 }
 
 function clearFilters() {
-    document.querySelectorAll('.filters-card input, .filters-card select').forEach(el => el.value = '');
+    document.querySelectorAll('.filters-card input[type="text"], .filters-card input[type="datetime-local"], .filters-card select').forEach(el => el.value = '');
+    const hideAcked = document.getElementById('filterHideAcked');
+    if (hideAcked) hideAcked.checked = true;
     applyFilters();
 }
 
@@ -206,7 +237,11 @@ function updateTable(alarms) {
             <td style="font-weight: 500">${a.message || '—'}</td>
             <td><span class="severity-tag ${sevClass}">${a.severity || 0}</span></td>
             <td style="font-weight: 600; color: var(--primary)">${a.sourceName || '—'}</td>
-            <td style="color: var(--secondary)">${a.eventCategory || '—'}</td>
+            <td>
+                <span class="status-badge ${a.acked ? 'status-active' : 'status-inactive'}" style="font-size: 0.7rem">
+                    ${a.acked ? 'ACKED' : 'NEW'}
+                </span>
+            </td>
             <td>
                 <span style="color: ${a.active ? 'var(--danger)' : 'var(--success)'}; font-weight: 600">
                     ${a.active ? 'ACTIVE' : 'RESOLVED'}
@@ -260,22 +295,38 @@ function changePageSize(size) { currentPageSize = parseInt(size); currentPage = 
 async function pollForNewAlarms(apiUrl) {
     try {
         if (!lastCheckTime) return;
+
+        // 1. Fetch truly new alarms based on timestamp
+        const hideAckedOld = document.getElementById('filterHideAcked')?.checked;
         const newAlarms = await fetchAlarms(apiUrl, lastCheckTime);
         if (newAlarms.length > 0) {
             const trulyNew = newAlarms.filter(a => !seenAlarmIds.has(a.eventID));
             if (trulyNew.length > 0) {
-                trulyNew.forEach(a => { addNewAlert(a); seenAlarmIds.add(a.eventID); });
+                trulyNew.forEach(a => {
+                    if (!a.acked) addNewAlert(a);
+                    seenAlarmIds.add(a.eventID);
+                });
                 allAlarms = [...trulyNew, ...allAlarms];
                 filteredAlarms = allAlarms;
                 updateTable(filteredAlarms);
             }
         }
         lastCheckTime = new Date();
+
+        // 2. Periodically sync the notification panel with server state (handles cross-tab ack)
+        // We do this every 2 polls (10s) to reduce traffic
+        if (!window.syncCounter) window.syncCounter = 0;
+        window.syncCounter++;
+        if (window.syncCounter >= 2) {
+            await loadUnclearedAlarms();
+            window.syncCounter = 0;
+        }
+
     } catch (e) { }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    loadUnclearedAlarms();
+    await loadUnclearedAlarms();
     await initialFetchAlarms();
     setInterval(() => pollForNewAlarms(`${window.location.origin}/api/alarms`), POLL_INTERVAL);
     if (typeof lucide !== 'undefined') {
